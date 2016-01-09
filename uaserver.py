@@ -35,7 +35,13 @@ class Keep_uaXml(ContentHandler):
 
     def get_tags(self):
         return self.tags
-        
+
+def makeLog(pathlog,hora,traza):
+    fichero = open(pathlog, 'a')
+    fichero.write(time.strftime('%Y%m%d%H%M%S', hora))
+    traza = traza.replace('\r\n', ' ')
+    fichero.write(traza + '\r\n')
+    fichero.close()
 
 class EchoHandler(socketserver.DatagramRequestHandler):
     """
