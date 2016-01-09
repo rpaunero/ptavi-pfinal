@@ -8,14 +8,10 @@ import socket
 import os
 import sys
 from uaserver import Keep_uaXml
+from uaserver import makeLog
 from xml.sax import make_parser
 from xml.sax.handler import ContentHandler
 import hashlib
-
-def generate_response(passwd, nonce):
-    m = hashlib.md5()
-    m.update(passwd + nonce)
-    response = m.hexdigest()
 
 
 if len(sys.argv) != 4:
