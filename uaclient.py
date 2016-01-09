@@ -5,83 +5,116 @@ Programa cliente que abre un socket a un servidor
 """
 
 import socket
+import os
 import sys
+from uaserver import Keep_uaXml
 from xml.sax import make_parser
 from xml.sax.handler import ContentHandler
+import hashlib
+
+def generate_response(passwd, nonce):
+    m = hashlib.md5()
+    m.update(passwd + nonce)
+    response = m.hexdigest()
 
 
-class Xml(ContentHandler):
-
-    def __init__(self):
-
-        self.tags = []
-        self.dicc = {'account': ['username', 'passwd'],
-                     'uaserver': ['ip', 'puerto'],
-                     'rtpaudio': ['puerto'],
-                     'regproxy': ['ip', 'puerto'],
-                     'log': ['path']
-                     'audio': ['path']}
-
-    def startElement(self, name, attrs):
-        """
-        Método que se llama cuando se abre una etiqueta
-        """
-        if name in self.dicc:
-            tmpdic = {}
-            for atributo in self.dicc[name]:
-                tmpdic[atributo] = attrs.get(atributo, "")
-            self.tags.append([name, tmpdic])
-
-    def get_tags(self):
-        return self.tags
-
-
-if len(sys.argv) != 3:
-    sys.exit('Usage: python uaclient.py method option')
+if len(sys.argv) != 4:
+    sys.exit('Usage: python uaclient.py config method option')
 
 FILE = sys.argv[1]
 METHOD = sys.argv[2]
 OPTION = sys.argv[3]
 
+# Manejamos el fichero de configuración
 parser = make_parser()
-cHandler = Xml()
+cHandler = Keep_uaXml()
 parser.setContentHandler(cHandler)
 parser.parse(open(FILE))
-misDatos = cHandler.get_tags()
-print(misDatos)
+DatosXml = cHandler.get_tags()
+#print(DatosXml)
 
 
-#if not '@' or ':' in LOGIN:
-    #sys.exit('Usage: python client.py method receiver@IP:SIPport')
+#Datos del Xml (uan.xml)
+username = DatosXml[0][1]['username']
+passwd = DatosXml[0][1]['passwd']
+ipServer = DatosXml[1][1]['ip']
+portServer = DatosXml[1][1]['puerto']
+portRtp = DatosXml[2][1]['puerto']
+ipProxy = DatosXml[3][1]['ip']
+portProxy = DatosXml[3][1]['puerto']
+pathLog = DatosXml[4][1]['path']
+pathAudio = DatosXml[5][1]['path']
 
-if METHOD not in ['INVITE', 'BYE']:
-    sys.exit('Usage: python client.py method(INVITE/BYE) receiver@IP:SIPport')
-else:
-    LINE = METHOD
-LINE = LINE + ' ' + 'sip:' + LOGIN + ' ' + 'SIP/2.0'
 
 # Creamos el socket, lo configuramos y lo atamos a un servidor/puerto
 my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-my_socket.connect((IP, PORT))
+my_socket.connect((ipProxy, int(portProxy)))
 
+LINE = METHOD + " sip:"
+if METHOD == 'REGISTER':
+    LINE = LINE + username + ":" + portServer
+    LINE = LINE + " SIP/2.0\r\n" + "Expires: "
+    LINE = LINE + OPTION + "\r\n"
+    print("Enviando: " + LINE)
+    my_socket.send(bytes(LINE, 'utf-8') + b'\r\n')
+    data = my_socket.recv(1024)
+    instruccion = data.decode('utf-8')
+    linea1 = instruccion.split('\r\n')[1]
+    nonce = linea1.split(' ')[2].split(':')[0]
+    print('Recibido -- ', instruccion)
+#Autenticacion 
+    LINE1 = METHOD + " sip:"
+    LINE1 = LINE1 + username + ":" + portServer
+    LINE1 = LINE1 + " SIP/2.0\r\n" + "Expires: "
+    LINE1 = LINE1 + OPTION + "\r\n"
+    nonceB = (bytes(nonce, 'utf-8'))
+    passwdB = (bytes(passwd, 'utf-8'))
+    #Generamos response
+    m = hashlib.md5()
+    m.update(passwdB + nonceB)
+    response = m.hexdigest()
+    LINE1 = LINE1 + 'Authorization: response=' + str(response) + "\r\n"
 
-print("Enviando: " + LINE)
-my_socket.send(bytes(LINE, 'utf-8') + b'\r\n')
-data = my_socket.recv(1024)
+elif METHOD == 'INVITE':
+    LINE1 = METHOD + " sip:"
+    LINE1 = LINE1 + OPTION + '\r\n'
+    LINE1 = LINE1 + "Content-Type: application/sdp\r\n\r\n"
+    LINE1 = LINE1 + "v=0\r\n"
+    LINE1 = LINE1 + "o=" + username + " " + ipServer
+    LINE1 = LINE1 + "\r\ns=misesion\r\n"
+    LINE1 = LINE1 + "t=0\r\n"
+    LINE1 = LINE1 + "m=audio " + portRtp +" RTP\r\n"
+elif METHOD == 'BYE':
+    LINE1 = METHOD + " sip:"
+    LINE1 = LINE1 + username + " SIP/2.0\r\n"
+        
+    
+print("Enviando: " + LINE1)
+my_socket.send(bytes(LINE1, 'utf-8') + b'\r\n')
+data = my_socket.recv(int(portProxy))
 
 instruccion = data.decode('utf-8')
 print('Recibido -- ', instruccion)
 
+#ACK
 if METHOD == 'INVITE':
     n1 = instruccion.split()[1]
     n2 = instruccion.split()[4]
     n3 = instruccion.split()[7]
+    linea = instruccion.split('\r\n')
+    ipEmisor = linea[9].split(' ')[1]
     if n1 == '100' and n2 == '180' and n3 == '200':
-        LINE = 'ACK' + ' ' + 'sip:' + LOGIN + ' ' + 'SIP/2.0'
+        LINE = 'ACK' + ' ' + 'sip:' + OPTION + ' ' + 'SIP/2.0'
         print("Enviando: " + LINE)
         my_socket.send(bytes(LINE, 'utf-8') + b'\r\n\r\n')
-        data = my_socket.recv(1024)
+
+        #Envio del audio
+        aEjecutar = './mp32rtp -i ' + ipEmisor
+        aEjecutar = aEjecutar + ' -p ' + portRtp + '< ' + pathAudio
+        print("Vamos a ejecutar", aEjecutar)
+        os.system(aEjecutar)
+        print('Ejecucion finalizada')
 
 print("Terminando socket...")
 
