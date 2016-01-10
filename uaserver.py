@@ -10,6 +10,7 @@ import os.path
 import os
 from xml.sax import make_parser
 from xml.sax.handler import ContentHandler
+import time
 
 class Keep_uaXml(ContentHandler):
 
@@ -36,11 +37,12 @@ class Keep_uaXml(ContentHandler):
     def get_tags(self):
         return self.tags
 
-def makeLog(pathlog,hora,traza):
+def makeLog(pathlog, hora, Evento):
     fichero = open(pathlog, 'a')
+    hora = time.gmtime(float(hora))
     fichero.write(time.strftime('%Y%m%d%H%M%S', hora))
-    traza = traza.replace('\r\n', ' ')
-    fichero.write(traza + '\r\n')
+    Evento = Evento.replace('\r\n', ' ')
+    fichero.write(Evento + '\r\n')
     fichero.close()
 
 class EchoHandler(socketserver.DatagramRequestHandler):
