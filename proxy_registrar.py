@@ -57,7 +57,7 @@ class Proxy(socketserver.DatagramRequestHandler):
         """
         Identifica y procesa las peticiones del cliente
         """
-        
+
         #Datos procedentes del cliente
         IP = self.client_address[0]
         PORT = self.client_address[1]
