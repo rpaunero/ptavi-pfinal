@@ -59,22 +59,28 @@ class EchoHandler(socketserver.DatagramRequestHandler):
             elemento = line.decode('utf-8')
             linea = elemento.split('\r\n')
             print("El cliente nos manda " + elemento)
+            #Log
+            Evento = ' Recived from ' + ipProxy + ':' + portProxy
+            Evento += ':' + elemento
+            hora = time.time()
+            makeLog(pathLog, hora, Evento)
+ 
             METHOD = elemento.split(' ')[0]
             if METHOD == 'INVITE':
             #Obtenemos IP del emisor
                 ipEmisor = linea[4].split(' ')[1]
 
-                self.wfile.write(b"SIP/2.0 100 Trying" + b"\r\n\r\n")
-                self.wfile.write(b"SIP/2.0 180 Ring" + b"\r\n\r\n")
-                self.wfile.write(b"SIP/2.0 200 OK" + b"\r\n\r\n")
-                self.wfile.write(b"Content-Type: application/sdp\r\n\r\n")
-                self.wfile.write(b"v=0\r\n")
-                self.wfile.write(b"o=" + bytes(username, 'utf-8') + b" ")
-                self.wfile.write(bytes(ipServer, 'utf-8') + b"\r\ns=misesion\r\n")
-                self.wfile.write(b"t=0\r\n")
-                self.wfile.write(b"m=audio " + bytes(portRtp, 'utf-8') + b" RTP\r\n")
+                LINE = "SIP/2.0 100 Trying" + "\r\n\r\n"
+                LINE += "SIP/2.0 180 Ring" + "\r\n\r\n"
+                LINE += "SIP/2.0 200 OK" + "\r\n\r\n"
+                LINE += "Content-Type: application/sdp\r\n\r\n"
+                LINE += "v=0\r\n"
+                LINE += "o=" + username + " "
+                LINE += ipServer + "\r\ns=misesion\r\n"
+                LINE += "t=0\r\n"
+                LINE += "m=audio " + portRtp + " RTP\r\n"
             elif METHOD == 'BYE':
-                self.wfile.write(b"SIP/2.0 200 OK" + b"\r\n\r\n")
+                LINE = "SIP/2.0 200 OK" + "\r\n\r\n"
             elif METHOD == 'ACK':
        # aEjecutar es un string con lo que se ha de ejecutar en la shell
                 aEjecutar = './mp32rtp -i ' + ipServer
@@ -83,10 +89,18 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                 os.system(aEjecutar)
                 print("Ejecucion finalizada")
             elif METHOD not in ['INVITE', 'ACK', 'BYE']:
-                self.wfile.write(b"SIP/2.0 405 Method Not Allowed" +
-                                 b"\r\n\r\n")
+                LINE = "SIP/2.0 405 Method Not Allowed" + "\r\n\r\n"
             else:
-                self.wfile.write(b"SIP/2.0 400 Bad Request" + b"\r\n\r\n")
+                LINE = "SIP/2.0 400 Bad Request" + "\r\n\r\n"
+            
+            if METHOD != 'ACK':
+                print("Enviando: " + LINE)
+                self.wfile.write(bytes(LINE,"utf-8"))
+                #Log
+                Evento = ' Send to ' + ipProxy + ':' + portProxy
+                Evento += ':' + LINE
+                hora = time.time()
+                makeLog(pathLog, hora, Evento)
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
