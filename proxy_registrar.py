@@ -69,15 +69,21 @@ class Proxy(socketserver.DatagramRequestHandler):
                     break
             elemento = line.decode('utf-8')
             print("El cliente nos manda " + elemento)
+            #Log
+            Evento = ' Recived from ' + IP + ':' + str(PORT)
+            Evento += ':' + elemento
+            hora = time.time()
+            makeLog(pathLog, hora, Evento)
+ 
             LINEA = elemento.split('\r\n')
             METHOD = elemento.split(' ')[0]
             direccion = LINEA[0].split(' ')[1].split(':')[1]
             if METHOD == 'REGISTER':
                 if LINEA[2].split(' ')[0] != 'Authorization:':
-                    self.wfile.write(b"SIP/2.0 401 Unauthorized\r\n")
-                    self.wfile.write(b"WWW Authenticate: nonce=")
-                    nonce = random.randint(0, 999999999999999999999)                                
-                    self.wfile.write(bytes(str(nonce), 'utf-8'))
+                    LINE = "SIP/2.0 401 Unauthorized\r\n"
+                    LINE += "WWW Authenticate: nonce="
+                    nonce = random.randint(0, 999999999999999999999)
+                    LINE += str(nonce)
                 else:
                     formato = '%Y-%m-%d %H:%M:%S' 
                     time_expires1 = time.gmtime(time.time() + int(LINEA[1].split(' ')[1]))
@@ -100,13 +106,27 @@ class Proxy(socketserver.DatagramRequestHandler):
                         del self.dicc[usuario]
                         print('eliminamos:' + usuario)
                     if  LINEA[1].split(' ')[0] == 'Expires:':
-                        self.wfile.write(b"SIP/2.0 200 OK\r\n\r\n")
+                        LINE = "SIP/2.0 200 OK\r\n\r\n"
                         self.register2json()
                     else:
-                        self.wfile.write(b"SIP/2.0 400 Bad Request\r\n\r\n")
+                        LINE = "SIP/2.0 400 Bad Request\r\n\r\n"
+                print("Enviando: " + LINE)
+                self.wfile.write(bytes(LINE,"utf-8"))
+                #Log
+                Evento = ' Send to ' + IP + ':' + str(PORT)
+                Evento += ':' + LINE
+                hora = time.time()
+                makeLog(pathLog, hora, Evento)
             else:
                 if direccion not in self.dicc:
-                    self.wfile.write(b"SIP/2.0 404 User Not Found\r\n\r\n")
+                    LINE = "SIP/2.0 404 User Not Found\r\n\r\n"
+                    print("Enviando: " + LINE)
+                    self.wfile.write(bytes(LINE,"utf-8"))
+                    #Log
+                    Evento = ' Send to ' + IP + ':' + str(PORT)
+                    Evento += ':' + LINE
+                    hora = time.time()
+                    makeLog(pathLog, hora, Evento)
                 else:
                     IPs = self.dicc[direccion][0]
                     PORTs = self.dicc[direccion][1]
@@ -115,18 +135,22 @@ class Proxy(socketserver.DatagramRequestHandler):
                     my_socket.connect((IPs, int(PORTs)))
                     print("Reenviando: " + elemento)
                     my_socket.send(bytes(elemento, 'utf-8') + b'\r\n')
+                    #Log
+                    Evento = ' Send to ' + IPs + ':' + str(PORTs)
+                    Evento += ':' + elemento
+                    hora = time.time()
+                    makeLog(pathLog, hora, Evento)
+
                     data = my_socket.recv(1024)
                     instruccion = data.decode('utf-8')
                     print('Recibido -- ', instruccion)
                     self.wfile.write(data)
-                    if METHOD == 'INVITE':
-                        pass
-                    elif METHOD == 'ACK':
-                        pass
-                    elif METHOD == 'BYE':
-                        pass
-                    else:
-                        pass 
+                    #Log
+                    Evento = ' Recived from ' + IP + ':' + str(PORT)
+                    Evento += ':' + instruccion
+                    hora = time.time()
+                    makeLog(pathLog, hora, Evento)
+                     
 
 
 if __name__ == "__main__":
