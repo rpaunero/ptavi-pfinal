@@ -1,8 +1,8 @@
 <config>
     <account username="raquel@rpaunero.com" passwd="urjc"/>
-    <uaserver ip="127.0.0.1" puerto="5432"/>
+    <uaserver ip="127.0.0.1" puerto="5063"/>
     <rtpaudio puerto="3267"/>
     <regproxy ip="127.0.0.1" puerto="2482"/>
-    <log path="log.txt"/>
+    <log path="log1.txt"/>
     <audio path="cancion.mp3"/>
 </config>
