@@ -17,6 +17,7 @@ import random
 from uaserver import makeLog
 import hashlib
 
+
 class Keep_prXml(ContentHandler):
 
     def __init__(self):
@@ -75,7 +76,7 @@ class Proxy(socketserver.DatagramRequestHandler):
             Evento += ':' + elemento
             hora = time.time()
             makeLog(pathLog, hora, Evento)
-    
+
             LINEA = elemento.split('\r\n')
             METHOD = elemento.split(' ')[0]
             direccion = LINEA[0].split(' ')[1].split(':')[1]
@@ -89,15 +90,15 @@ class Proxy(socketserver.DatagramRequestHandler):
                     response = LINEA[2].split()[1].split('=')[1]
                     nonce = LINEA[2].split()[2].split('=')[1]
                     #Autenticacion
-                    fichero = open(passwdpath)  
+                    fichero = open(passwdpath)
                     datos = fichero.readlines()
                     registradosdicc = {}
                     for usuario in datos:
                         passwd = usuario.split()[1]
                         name = usuario.split()[0]
-                        registradosdicc[name]= passwd
+                        registradosdicc[name] = passwd
                     passwdClient = registradosdicc[direccion]
-                    
+
                     nonceB = (bytes(str(nonce), 'utf-8'))
                     passwdClientB = (bytes(passwdClient, 'utf-8'))
                     #Generamos response
@@ -105,32 +106,34 @@ class Proxy(socketserver.DatagramRequestHandler):
                     m.update(passwdClientB + nonceB)
                     response1 = m.hexdigest()
                     if response != response1:
-                        LINE = "SIP/2.0 401 Unauthorized\r\n" 
+                        LINE = "SIP/2.0 401 Unauthorized\r\n"
                     else:
-                        formato = '%Y-%m-%d %H:%M:%S' 
-                        time_expires1 = time.gmtime(time.time() + int(LINEA[1].split(' ')[1]))
-                        time_expires = time.strftime(formato, time_expires1)
+                        f = '%Y-%m-%d %H:%M:%S'
+                        tiempo = int(LINEA[1].split(' ')[1])
+                        hora = time.time()
+                        time_expires1 = time.gmtime(hora + tiempo)
+                        time_expires = time.strftime(f, time_expires1)
                         current_time1 = time.gmtime(time.time())
-                        current_time = time.strftime(formato, current_time1)
+                        current_time = time.strftime(f, current_time1)
                         #Puerto del server
                         PORT_S = LINEA[0].split(' ')[1].split(':')[2]
                         self.dicc[direccion] = [IP, PORT_S, time_expires]
 
                         temp_list = []
                         for usuario in self.dicc:
-                            usuario_time = self.dicc[usuario][2]
-                            if (time.strptime(usuario_time, formato) <= current_time1):
+                            usuarioT = self.dicc[usuario][2]
+                            if (time.strptime(usuarioT, f) <= current_time1):
                                 temp_list.append(usuario)
                         for usuario in temp_list:
                             del self.dicc[usuario]
                             print('eliminamos:' + usuario)
-                        if  LINEA[1].split(' ')[0] == 'Expires:':
+                        if LINEA[1].split(' ')[0] == 'Expires:':
                             LINE = "SIP/2.0 200 OK\r\n\r\n"
                             self.register2json()
                         else:
                             LINE = "SIP/2.0 400 Bad Request\r\n\r\n"
                 print("Enviando: " + LINE)
-                self.wfile.write(bytes(LINE,"utf-8"))
+                self.wfile.write(bytes(LINE, "utf-8"))
                 #Log
                 Evento = ' Send to ' + IP + ':' + str(PORT)
                 Evento += ':' + LINE
@@ -140,7 +143,7 @@ class Proxy(socketserver.DatagramRequestHandler):
                 if direccion not in self.dicc:
                     LINE = "SIP/2.0 404 User Not Found\r\n\r\n"
                     print("Enviando: " + LINE)
-                    self.wfile.write(bytes(LINE,"utf-8"))
+                    self.wfile.write(bytes(LINE, "utf-8"))
                     #Log
                     Evento = ' Send to ' + IP + ':' + str(PORT)
                     Evento += ':' + LINE
@@ -149,8 +152,10 @@ class Proxy(socketserver.DatagramRequestHandler):
                 else:
                     IPs = self.dicc[direccion][0]
                     PORTs = self.dicc[direccion][1]
-                    my_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                    my_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                    my_socket = socket.socket(socket.AF_INET,
+                                              socket.SOCK_DGRAM)
+                    my_socket.setsockopt(socket.SOL_SOCKET,
+                                         socket.SO_REUSEADDR, 1)
                     my_socket.connect((IPs, int(PORTs)))
                     print("Reenviando: " + elemento)
                     my_socket.send(bytes(elemento, 'utf-8') + b'\r\n')
@@ -169,8 +174,6 @@ class Proxy(socketserver.DatagramRequestHandler):
                     Evento += ':' + instruccion
                     hora = time.time()
                     makeLog(pathLog, hora, Evento)
-                     
-
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -181,14 +184,12 @@ if __name__ == "__main__":
     if not os.path.exists(FILE):
         sys.exit('Usage: audio file does not exists')
 
-
     # Manejamos el fichero de configuración
     parser = make_parser()
     cHandler = Keep_prXml()
     parser.setContentHandler(cHandler)
     parser.parse(open(FILE))
     DatosXml = cHandler.get_tags()
-    #print(DatosXml) 
 
     #Guardo datos del Xml (pr.xml)
     name = DatosXml[0][1]['name']
@@ -202,5 +203,3 @@ if __name__ == "__main__":
 
     proxy_serv = socketserver.UDPServer((ip, int(portProxy)), Proxy)
     proxy_serv.serve_forever()
-
-   
