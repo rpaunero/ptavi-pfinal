@@ -75,8 +75,8 @@ try:
         Evento = ' Recived from ' + ipProxy + ':' + portProxy
         Evento += ':' + instruccion
         hora = time.time()
-        makeLog(pathLog, hora, Evento) 
-        #Autenticacion 
+        makeLog(pathLog, hora, Evento)
+        #Autenticacion
         LINE1 = METHOD + " sip:"
         LINE1 += username + ":" + portServer
         LINE1 += " SIP/2.0\r\n" + "Expires: "
@@ -87,8 +87,8 @@ try:
         m = hashlib.md5()
         m.update(passwdB + nonceB)
         response = m.hexdigest()
-        LINE1 += 'Authorization: response=' + str(response) + " " + 'nonce=' + nonce + "\r\n"
-
+        LINE1 += 'Authorization: response=' + str(response)
+        LINE1 += " " + 'nonce=' + nonce + "\r\n"
 
     elif METHOD == 'INVITE':
         LINE1 = METHOD + " sip:"
@@ -98,12 +98,11 @@ try:
         LINE1 += "o=" + username + " " + ipServer
         LINE1 += "\r\ns=misesion\r\n"
         LINE1 += "t=0\r\n"
-        LINE1 += "m=audio " + portRtp +" RTP\r\n"
+        LINE1 += "m=audio " + portRtp + " RTP\r\n"
     elif METHOD == 'BYE':
         LINE1 = METHOD + " sip:"
         LINE1 += OPTION + " SIP/2.0\r\n"
-            
-        
+
     print("Enviando: " + LINE1)
     #Log
     Evento = ' Send to ' + ipProxy + ':' + portProxy
@@ -120,7 +119,7 @@ try:
     Evento = ' Recived from ' + ipProxy + ':' + portProxy
     Evento += ':' + instruccion
     hora = time.time()
-    makeLog(pathLog, hora, Evento) 
+    makeLog(pathLog, hora, Evento)
 
     linea = instruccion.split('\r\n')
     ninstruccion = linea[0].split(' ')[1]
@@ -138,12 +137,14 @@ try:
             Evento += ':' + LINE
             hora = time.time()
             makeLog(pathLog, hora, Evento)
-
             my_socket.send(bytes(LINE, 'utf-8') + b'\r\n\r\n')
-
+            #VLC
+            aEjecutarVLC = 'cvlc rtp://@127.0.0.1:'
+            aEjecutarVLC += portRtp + '2> /dev/null &'
+            os.system(aEjecutarVLC)
             #Envio del audio
             aEjecutar = './mp32rtp -i ' + ipEmisor
-            aEjecutar = aEjecutar + ' -p ' + portRtp + '< ' + pathAudio
+            aEjecutar += ' -p ' + portRtp + '< ' + pathAudio
             print("Vamos a ejecutar", aEjecutar)
             os.system(aEjecutar)
             print('Ejecucion finalizada')
