@@ -91,7 +91,6 @@ class Proxy(socketserver.DatagramRequestHandler):
                     #Autenticacion
                     fichero = open(passwdpath)  
                     datos = fichero.readlines()
-                    print('DATOS:' + str(datos))
                     registradosdicc = {}
                     for usuario in datos:
                         passwd = usuario.split()[1]
@@ -108,8 +107,6 @@ class Proxy(socketserver.DatagramRequestHandler):
                     m = hashlib.md5()
                     m.update(passwdClientB + nonceB)
                     response1 = m.hexdigest()
-                    print('response' + response)
-                    print('response1' + response1)
                     if response != response1:
                         LINE = "SIP/2.0 401 Unauthorized\r\n" 
                     else:
@@ -182,7 +179,6 @@ class Proxy(socketserver.DatagramRequestHandler):
 
 
 if __name__ == "__main__":
-
     if len(sys.argv) != 2:
         sys.exit('Usage: python proxyregistrar.py config')
 
@@ -212,4 +208,5 @@ if __name__ == "__main__":
 
     proxy_serv = socketserver.UDPServer((ip, int(portProxy)), Proxy)
     proxy_serv.serve_forever()
+
    
