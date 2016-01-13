@@ -115,8 +115,7 @@ if __name__ == "__main__":
     cHandler = Keep_uaXml()
     parser.setContentHandler(cHandler)
     parser.parse(open(FILE))
-    DatosXml = cHandler.get_tags()
-    #print(DatosXml)    
+    DatosXml = cHandler.get_tags()   
 
 #Guardo datos del Xml (uan.xml)
     username = DatosXml[0][1]['username']
