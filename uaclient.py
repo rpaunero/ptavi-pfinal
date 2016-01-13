@@ -59,7 +59,7 @@ if METHOD == 'REGISTER':
     LINE = LINE + " SIP/2.0\r\n" + "Expires: "
     LINE = LINE + OPTION + "\r\n"
     print("Enviando: " + LINE)
-#Log
+    #Log
     Evento = ' Send to ' + ipProxy + ':' + portProxy
     Evento += ':' + LINE
     hora = time.time()
@@ -69,7 +69,7 @@ if METHOD == 'REGISTER':
     data = my_socket.recv(1024)
     instruccion = data.decode('utf-8')
     linea1 = instruccion.split('\r\n')[1]
-    nonce = linea1.split(' ')[2].split(':')[0]
+    nonce = linea1.split(' ')[2].split(':')[0].split('=')[1]
     print('Recibido -- ', instruccion)
     #Log
     Evento = ' Recived from ' + ipProxy + ':' + portProxy
@@ -81,13 +81,13 @@ if METHOD == 'REGISTER':
     LINE1 += username + ":" + portServer
     LINE1 += " SIP/2.0\r\n" + "Expires: "
     LINE1 += OPTION + "\r\n"
-    nonceB = (bytes(nonce, 'utf-8'))
+    nonceB = (bytes(str(nonce), 'utf-8'))
     passwdB = (bytes(passwd, 'utf-8'))
     #Generamos response
     m = hashlib.md5()
     m.update(passwdB + nonceB)
     response = m.hexdigest()
-    LINE1 += 'Authorization: response=' + str(response) + "\r\n"
+    LINE1 += 'Authorization: response=' + str(response) + " ," + 'nonce=' + nonce + "\r\n"
 
 
 elif METHOD == 'INVITE':
@@ -121,12 +121,18 @@ Evento = ' Recived from ' + ipProxy + ':' + portProxy
 Evento += ':' + instruccion
 hora = time.time()
 makeLog(pathLog, hora, Evento) 
+
+linea = instruccion.split('\r\n')
+ninstruccion = linea[0].split(' ')[1]
 #ACK
-if METHOD == 'INVITE':
+print('METHOD' + METHOD)
+print('NINSTRUCCION' + ninstruccion)
+if METHOD == 'INVITE' and int(ninstruccion) == 100:
+    print('TRAZAAAAAAAA')
     n1 = instruccion.split()[1]
     n2 = instruccion.split()[4]
     n3 = instruccion.split()[7]
-    linea = instruccion.split('\r\n')
+    #linea = instruccion.split('\r\n')
     ipEmisor = linea[9].split(' ')[1]
     if n1 == '100' and n2 == '180' and n3 == '200':
         LINE = 'ACK' + ' ' + 'sip:' + OPTION + ' ' + 'SIP/2.0'
