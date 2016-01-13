@@ -71,9 +71,9 @@ class EchoHandler(socketserver.DatagramRequestHandler):
             if METHOD == 'INVITE':
             #Obtenemos IP del emisor
                 ipEmisor = linea[4].split(' ')[1]
-                LINE = "SIP/2.0 100 Trying" + "\r\n\r\n"
-                LINE += "SIP/2.0 180 Ring" + "\r\n\r\n"
-                LINE += "SIP/2.0 200 OK" + "\r\n\r\n"
+                LINE = "SIP/2.0 100 Trying" + "\r\n"
+                LINE += "SIP/2.0 180 Ring" + "\r\n"
+                LINE += "SIP/2.0 200 OK" + "\r\n"
                 LINE += "Content-Type: application/sdp\r\n\r\n"
                 LINE += "v=0\r\n"
                 LINE += "o=" + username + " "
