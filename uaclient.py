@@ -92,7 +92,7 @@ try:
 
     elif METHOD == 'INVITE':
         LINE1 = METHOD + " sip:"
-        LINE1 += OPTION + '\r\n'
+        LINE1 += OPTION + ' SIP/2.0\r\n'
         LINE1 += "Content-Type: application/sdp\r\n\r\n"
         LINE1 += "v=0\r\n"
         LINE1 += "o=" + username + " " + ipServer
@@ -128,7 +128,7 @@ try:
         n1 = instruccion.split()[1]
         n2 = instruccion.split()[4]
         n3 = instruccion.split()[7]
-        ipEmisor = linea[9].split(' ')[1]
+        ipEmisor = linea[6].split(' ')[1]
         if n1 == '100' and n2 == '180' and n3 == '200':
             LINE = 'ACK' + ' ' + 'sip:' + OPTION + ' ' + 'SIP/2.0'
             print("Enviando: " + LINE)
