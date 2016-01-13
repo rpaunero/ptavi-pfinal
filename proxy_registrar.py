@@ -96,13 +96,10 @@ class Proxy(socketserver.DatagramRequestHandler):
                         passwd = usuario.split()[1]
                         name = usuario.split()[0]
                         registradosdicc[name]= passwd
-                    print(registradosdicc)
                     passwdClient = registradosdicc[direccion]
                     
                     nonceB = (bytes(str(nonce), 'utf-8'))
-                    print('nonce ' + str(nonce))
                     passwdClientB = (bytes(passwdClient, 'utf-8'))
-                    print('passwdClientB ' + str(passwdClientB))
                     #Generamos response
                     m = hashlib.md5()
                     m.update(passwdClientB + nonceB)
@@ -118,9 +115,6 @@ class Proxy(socketserver.DatagramRequestHandler):
                         #Puerto del server
                         PORT_S = LINEA[0].split(' ')[1].split(':')[2]
                         self.dicc[direccion] = [IP, PORT_S, time_expires]
-                        print('IP traza:' + IP)
-                        print('Expires traza:' + time_expires)
-                        print(time_expires + ('....') + current_time)
 
                         temp_list = []
                         for usuario in self.dicc:
