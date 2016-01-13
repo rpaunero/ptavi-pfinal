@@ -76,7 +76,7 @@ try:
         Evento += ':' + instruccion
         hora = time.time()
         makeLog(pathLog, hora, Evento) 
-    #Autenticacion 
+        #Autenticacion 
         LINE1 = METHOD + " sip:"
         LINE1 += username + ":" + portServer
         LINE1 += " SIP/2.0\r\n" + "Expires: "
@@ -129,7 +129,6 @@ try:
         n1 = instruccion.split()[1]
         n2 = instruccion.split()[4]
         n3 = instruccion.split()[7]
-        #linea = instruccion.split('\r\n')
         ipEmisor = linea[9].split(' ')[1]
         if n1 == '100' and n2 == '180' and n3 == '200':
             LINE = 'ACK' + ' ' + 'sip:' + OPTION + ' ' + 'SIP/2.0'
