@@ -52,90 +52,12 @@ my_socket.connect((ipProxy, int(portProxy)))
 Evento = ' Starting... '
 hora = time.time()
 makeLog(pathLog, hora, Evento)
-
-LINE = METHOD + " sip:"
-if METHOD == 'REGISTER':
-    LINE = LINE + username + ":" + portServer
-    LINE = LINE + " SIP/2.0\r\n" + "Expires: "
-    LINE = LINE + OPTION + "\r\n"
-    print("Enviando: " + LINE)
-    #Log
-    Evento = ' Send to ' + ipProxy + ':' + portProxy
-    Evento += ':' + LINE
-    hora = time.time()
-    makeLog(pathLog, hora, Evento)
-
-    my_socket.send(bytes(LINE, 'utf-8') + b'\r\n')
-    data = my_socket.recv(1024)
-    instruccion = data.decode('utf-8')
-    linea1 = instruccion.split('\r\n')[1]
-    nonce = linea1.split(' ')[2].split(':')[0].split('=')[1]
-    print('Recibido -- ', instruccion)
-    #Log
-    Evento = ' Recived from ' + ipProxy + ':' + portProxy
-    Evento += ':' + instruccion
-    hora = time.time()
-    makeLog(pathLog, hora, Evento) 
-#Autenticacion 
-    LINE1 = METHOD + " sip:"
-    LINE1 += username + ":" + portServer
-    LINE1 += " SIP/2.0\r\n" + "Expires: "
-    LINE1 += OPTION + "\r\n"
-    nonceB = (bytes(str(nonce), 'utf-8'))
-    passwdB = (bytes(passwd, 'utf-8'))
-    #Generamos response
-    m = hashlib.md5()
-    m.update(passwdB + nonceB)
-    response = m.hexdigest()
-    LINE1 += 'Authorization: response=' + str(response) + " ," + 'nonce=' + nonce + "\r\n"
-
-
-elif METHOD == 'INVITE':
-    LINE1 = METHOD + " sip:"
-    LINE1 += OPTION + '\r\n'
-    LINE1 += "Content-Type: application/sdp\r\n\r\n"
-    LINE1 += "v=0\r\n"
-    LINE1 += "o=" + username + " " + ipServer
-    LINE1 += "\r\ns=misesion\r\n"
-    LINE1 += "t=0\r\n"
-    LINE1 += "m=audio " + portRtp +" RTP\r\n"
-elif METHOD == 'BYE':
-    LINE1 = METHOD + " sip:"
-    LINE1 += OPTION + " SIP/2.0\r\n"
-        
-    
-print("Enviando: " + LINE1)
-#Log
-Evento = ' Send to ' + ipProxy + ':' + portProxy
-Evento += ':' + LINE1
-hora = time.time()
-makeLog(pathLog, hora, Evento)
-
-my_socket.send(bytes(LINE1, 'utf-8') + b'\r\n')
-data = my_socket.recv(int(portProxy))
-
-instruccion = data.decode('utf-8')
-print('Recibido -- ', instruccion)
-#Log
-Evento = ' Recived from ' + ipProxy + ':' + portProxy
-Evento += ':' + instruccion
-hora = time.time()
-makeLog(pathLog, hora, Evento) 
-
-linea = instruccion.split('\r\n')
-ninstruccion = linea[0].split(' ')[1]
-#ACK
-print('METHOD' + METHOD)
-print('NINSTRUCCION' + ninstruccion)
-if METHOD == 'INVITE' and int(ninstruccion) == 100:
-    print('TRAZAAAAAAAA')
-    n1 = instruccion.split()[1]
-    n2 = instruccion.split()[4]
-    n3 = instruccion.split()[7]
-    #linea = instruccion.split('\r\n')
-    ipEmisor = linea[9].split(' ')[1]
-    if n1 == '100' and n2 == '180' and n3 == '200':
-        LINE = 'ACK' + ' ' + 'sip:' + OPTION + ' ' + 'SIP/2.0'
+try:
+    LINE = METHOD + " sip:"
+    if METHOD == 'REGISTER':
+        LINE = LINE + username + ":" + portServer
+        LINE = LINE + " SIP/2.0\r\n" + "Expires: "
+        LINE = LINE + OPTION + "\r\n"
         print("Enviando: " + LINE)
         #Log
         Evento = ' Send to ' + ipProxy + ':' + portProxy
@@ -143,17 +65,104 @@ if METHOD == 'INVITE' and int(ninstruccion) == 100:
         hora = time.time()
         makeLog(pathLog, hora, Evento)
 
-        my_socket.send(bytes(LINE, 'utf-8') + b'\r\n\r\n')
+        my_socket.send(bytes(LINE, 'utf-8') + b'\r\n')
+        data = my_socket.recv(1024)
+        instruccion = data.decode('utf-8')
+        linea1 = instruccion.split('\r\n')[1]
+        nonce = linea1.split(' ')[2].split(':')[0].split('=')[1]
+        print('Recibido -- ', instruccion)
+        #Log
+        Evento = ' Recived from ' + ipProxy + ':' + portProxy
+        Evento += ':' + instruccion
+        hora = time.time()
+        makeLog(pathLog, hora, Evento) 
+    #Autenticacion 
+        LINE1 = METHOD + " sip:"
+        LINE1 += username + ":" + portServer
+        LINE1 += " SIP/2.0\r\n" + "Expires: "
+        LINE1 += OPTION + "\r\n"
+        nonceB = (bytes(str(nonce), 'utf-8'))
+        passwdB = (bytes(passwd, 'utf-8'))
+        #Generamos response
+        m = hashlib.md5()
+        m.update(passwdB + nonceB)
+        response = m.hexdigest()
+        LINE1 += 'Authorization: response=' + str(response) + " " + 'nonce=' + nonce + "\r\n"
 
-        #Envio del audio
-        aEjecutar = './mp32rtp -i ' + ipEmisor
-        aEjecutar = aEjecutar + ' -p ' + portRtp + '< ' + pathAudio
-        print("Vamos a ejecutar", aEjecutar)
-        os.system(aEjecutar)
-        print('Ejecucion finalizada')
 
-print("Terminando socket...")
+    elif METHOD == 'INVITE':
+        LINE1 = METHOD + " sip:"
+        LINE1 += OPTION + '\r\n'
+        LINE1 += "Content-Type: application/sdp\r\n\r\n"
+        LINE1 += "v=0\r\n"
+        LINE1 += "o=" + username + " " + ipServer
+        LINE1 += "\r\ns=misesion\r\n"
+        LINE1 += "t=0\r\n"
+        LINE1 += "m=audio " + portRtp +" RTP\r\n"
+    elif METHOD == 'BYE':
+        LINE1 = METHOD + " sip:"
+        LINE1 += OPTION + " SIP/2.0\r\n"
+            
+        
+    print("Enviando: " + LINE1)
+    #Log
+    Evento = ' Send to ' + ipProxy + ':' + portProxy
+    Evento += ':' + LINE1
+    hora = time.time()
+    makeLog(pathLog, hora, Evento)
 
-# Cerramos todo
-my_socket.close()
-print("Fin.")
+    my_socket.send(bytes(LINE1, 'utf-8') + b'\r\n')
+    data = my_socket.recv(int(portProxy))
+
+    instruccion = data.decode('utf-8')
+    print('Recibido -- ', instruccion)
+    #Log
+    Evento = ' Recived from ' + ipProxy + ':' + portProxy
+    Evento += ':' + instruccion
+    hora = time.time()
+    makeLog(pathLog, hora, Evento) 
+
+    linea = instruccion.split('\r\n')
+    ninstruccion = linea[0].split(' ')[1]
+    #ACK
+    if METHOD == 'INVITE' and int(ninstruccion) == 100:
+        n1 = instruccion.split()[1]
+        n2 = instruccion.split()[4]
+        n3 = instruccion.split()[7]
+        #linea = instruccion.split('\r\n')
+        ipEmisor = linea[9].split(' ')[1]
+        if n1 == '100' and n2 == '180' and n3 == '200':
+            LINE = 'ACK' + ' ' + 'sip:' + OPTION + ' ' + 'SIP/2.0'
+            print("Enviando: " + LINE)
+            #Log
+            Evento = ' Send to ' + ipProxy + ':' + portProxy
+            Evento += ':' + LINE
+            hora = time.time()
+            makeLog(pathLog, hora, Evento)
+
+            my_socket.send(bytes(LINE, 'utf-8') + b'\r\n\r\n')
+
+            #Envio del audio
+            aEjecutar = './mp32rtp -i ' + ipEmisor
+            aEjecutar = aEjecutar + ' -p ' + portRtp + '< ' + pathAudio
+            print("Vamos a ejecutar", aEjecutar)
+            os.system(aEjecutar)
+            print('Ejecucion finalizada')
+
+    print("Terminando socket...")
+
+    # Cerramos todo
+    my_socket.close()
+    print("Fin.")
+    #Log
+    Evento = ' Finishing. '
+    hora = time.time()
+    makeLog(pathLog, hora, Evento)
+
+except socket.error:
+    #Log
+    Evento = ' Error: No server listening at '
+    Evento += ipProxy + ' port ' + portProxy
+    hora = time.time()
+    makeLog(pathLog, hora, Evento)
+    print(Evento)
