@@ -12,6 +12,7 @@ from xml.sax import make_parser
 from xml.sax.handler import ContentHandler
 import time
 
+
 class Keep_uaXml(ContentHandler):
 
     def __init__(self):
@@ -37,6 +38,7 @@ class Keep_uaXml(ContentHandler):
     def get_tags(self):
         return self.tags
 
+
 def makeLog(pathlog, hora, Evento):
     fichero = open(pathlog, 'a')
     hora = time.gmtime(float(hora))
@@ -44,6 +46,7 @@ def makeLog(pathlog, hora, Evento):
     Evento = Evento.replace('\r\n', ' ')
     fichero.write(Evento + '\r\n')
     fichero.close()
+
 
 class EchoHandler(socketserver.DatagramRequestHandler):
     """
@@ -64,12 +67,10 @@ class EchoHandler(socketserver.DatagramRequestHandler):
             Evento += ':' + elemento
             hora = time.time()
             makeLog(pathLog, hora, Evento)
- 
             METHOD = elemento.split(' ')[0]
             if METHOD == 'INVITE':
             #Obtenemos IP del emisor
                 ipEmisor = linea[4].split(' ')[1]
-
                 LINE = "SIP/2.0 100 Trying" + "\r\n\r\n"
                 LINE += "SIP/2.0 180 Ring" + "\r\n\r\n"
                 LINE += "SIP/2.0 200 OK" + "\r\n\r\n"
@@ -82,7 +83,11 @@ class EchoHandler(socketserver.DatagramRequestHandler):
             elif METHOD == 'BYE':
                 LINE = "SIP/2.0 200 OK" + "\r\n\r\n"
             elif METHOD == 'ACK':
-       # aEjecutar es un string con lo que se ha de ejecutar en la shell
+                #VLC
+                aEjecutarVLC = 'cvlc rtp://@127.0.0.1:'
+                aEjecutarVLC += portRtp + '2> /dev/null &'
+                os.system(aEjecutarVLC)
+                #Envio del audio
                 aEjecutar = './mp32rtp -i ' + ipServer
                 aEjecutar = aEjecutar + ' -p ' + portRtp + '< ' + pathAudio
                 print("Vamos a ejecutar", aEjecutar)
@@ -92,10 +97,10 @@ class EchoHandler(socketserver.DatagramRequestHandler):
                 LINE = "SIP/2.0 405 Method Not Allowed" + "\r\n\r\n"
             else:
                 LINE = "SIP/2.0 400 Bad Request" + "\r\n\r\n"
-            
+
             if METHOD != 'ACK':
                 print("Enviando: " + LINE)
-                self.wfile.write(bytes(LINE,"utf-8"))
+                self.wfile.write(bytes(LINE, "utf-8"))
                 #Log
                 Evento = ' Send to ' + ipProxy + ':' + portProxy
                 Evento += ':' + LINE
@@ -115,7 +120,7 @@ if __name__ == "__main__":
     cHandler = Keep_uaXml()
     parser.setContentHandler(cHandler)
     parser.parse(open(FILE))
-    DatosXml = cHandler.get_tags()   
+    DatosXml = cHandler.get_tags()
 
 #Guardo datos del Xml (uan.xml)
     username = DatosXml[0][1]['username']
@@ -127,7 +132,6 @@ if __name__ == "__main__":
     portProxy = DatosXml[3][1]['puerto']
     pathLog = DatosXml[4][1]['path']
     pathAudio = DatosXml[5][1]['path']
-
 
     print('Listening...')
 
