@@ -15,6 +15,7 @@ import json
 import time
 import random
 from uaserver import makeLog
+import hashlib
 
 class Keep_prXml(ContentHandler):
 
@@ -74,42 +75,69 @@ class Proxy(socketserver.DatagramRequestHandler):
             Evento += ':' + elemento
             hora = time.time()
             makeLog(pathLog, hora, Evento)
- 
+    
             LINEA = elemento.split('\r\n')
             METHOD = elemento.split(' ')[0]
             direccion = LINEA[0].split(' ')[1].split(':')[1]
+            nonce = random.randint(0, 999999999999999999999)
             if METHOD == 'REGISTER':
                 if LINEA[2].split(' ')[0] != 'Authorization:':
                     LINE = "SIP/2.0 401 Unauthorized\r\n"
                     LINE += "WWW Authenticate: nonce="
-                    nonce = random.randint(0, 999999999999999999999)
                     LINE += str(nonce)
                 else:
-                    formato = '%Y-%m-%d %H:%M:%S' 
-                    time_expires1 = time.gmtime(time.time() + int(LINEA[1].split(' ')[1]))
-                    time_expires = time.strftime(formato, time_expires1)
-                    current_time1 = time.gmtime(time.time())
-                    current_time = time.strftime(formato, current_time1)
-                    #Puerto del server
-                    PORT_S = LINEA[0].split(' ')[1].split(':')[2]
-                    self.dicc[direccion] = [IP, PORT_S, time_expires]
-                    print('IP traza:' + IP)
-                    print('Expires traza:' + time_expires)
-                    print(time_expires + ('....') + current_time)
-
-                    temp_list = []
-                    for usuario in self.dicc:
-                        usuario_time = self.dicc[usuario][2]
-                        if (time.strptime(usuario_time, formato) <= current_time1):
-                            temp_list.append(usuario)
-                    for usuario in temp_list:
-                        del self.dicc[usuario]
-                        print('eliminamos:' + usuario)
-                    if  LINEA[1].split(' ')[0] == 'Expires:':
-                        LINE = "SIP/2.0 200 OK\r\n\r\n"
-                        self.register2json()
+                    response = LINEA[2].split()[1].split('=')[1]
+                    nonce = LINEA[2].split()[2].split('=')[1]
+                    #Autenticacion
+                    fichero = open(passwdpath)  
+                    datos = fichero.readlines()
+                    print('DATOS:' + str(datos))
+                    registradosdicc = {}
+                    for usuario in datos:
+                        passwd = usuario.split()[1]
+                        name = usuario.split()[0]
+                        registradosdicc[name]= passwd
+                    print(registradosdicc)
+                    passwdClient = registradosdicc[direccion]
+                    
+                    nonceB = (bytes(str(nonce), 'utf-8'))
+                    print('nonce ' + str(nonce))
+                    passwdClientB = (bytes(passwdClient, 'utf-8'))
+                    print('passwdClientB ' + str(passwdClientB))
+                    #Generamos response
+                    m = hashlib.md5()
+                    m.update(passwdClientB + nonceB)
+                    response1 = m.hexdigest()
+                    print('response' + response)
+                    print('response1' + response1)
+                    if response != response1:
+                        LINE = "SIP/2.0 401 Unauthorized\r\n" 
                     else:
-                        LINE = "SIP/2.0 400 Bad Request\r\n\r\n"
+                        formato = '%Y-%m-%d %H:%M:%S' 
+                        time_expires1 = time.gmtime(time.time() + int(LINEA[1].split(' ')[1]))
+                        time_expires = time.strftime(formato, time_expires1)
+                        current_time1 = time.gmtime(time.time())
+                        current_time = time.strftime(formato, current_time1)
+                        #Puerto del server
+                        PORT_S = LINEA[0].split(' ')[1].split(':')[2]
+                        self.dicc[direccion] = [IP, PORT_S, time_expires]
+                        print('IP traza:' + IP)
+                        print('Expires traza:' + time_expires)
+                        print(time_expires + ('....') + current_time)
+
+                        temp_list = []
+                        for usuario in self.dicc:
+                            usuario_time = self.dicc[usuario][2]
+                            if (time.strptime(usuario_time, formato) <= current_time1):
+                                temp_list.append(usuario)
+                        for usuario in temp_list:
+                            del self.dicc[usuario]
+                            print('eliminamos:' + usuario)
+                        if  LINEA[1].split(' ')[0] == 'Expires:':
+                            LINE = "SIP/2.0 200 OK\r\n\r\n"
+                            self.register2json()
+                        else:
+                            LINE = "SIP/2.0 400 Bad Request\r\n\r\n"
                 print("Enviando: " + LINE)
                 self.wfile.write(bytes(LINE,"utf-8"))
                 #Log
