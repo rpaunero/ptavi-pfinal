@@ -87,7 +87,7 @@ try:
         m = hashlib.md5()
         m.update(passwdB + nonceB)
         response = m.hexdigest()
-        LINE1 += 'Authorization: response=' + str(response)
+        LINE1 += 'Authorization: Digest response=' + str(response)
         LINE1 += " " + 'nonce=' + nonce + "\r\n"
 
     elif METHOD == 'INVITE':
