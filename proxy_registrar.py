@@ -87,8 +87,8 @@ class Proxy(socketserver.DatagramRequestHandler):
                     LINE += "WWW Authenticate: nonce="
                     LINE += str(nonce)
                 else:
-                    response = LINEA[2].split()[1].split('=')[1]
-                    nonce = LINEA[2].split()[2].split('=')[1]
+                    response = LINEA[2].split()[2].split('=')[1]
+                    nonce = LINEA[2].split()[3].split('=')[1]
                     #Autenticacion
                     fichero = open(passwdpath)
                     datos = fichero.readlines()
